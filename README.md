@@ -7,3 +7,18 @@ Projet universitaire
 - rebase avant de commencer à travailler et avant chaque push 
 - merge à la fin de la journée ou dès que le travail sur la branche est terminé
 - bien nommer les commits et les branches
+
+## Organisation projet 
+
+```bash
+--immatriculation-detection
+  |--src
+  |   |--train
+  |   |   |--train.py
+  |   | etc..
+--vitesse-vehicules
+  |--src
+  |   |--test
+  |   |   |--test.py
+  etc..
+```
