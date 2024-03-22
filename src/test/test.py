@@ -2,7 +2,7 @@ import cv2
 from ultralytics import YOLO
 
 # Load the YOLOv8 model
-model = YOLO('../../src/models/vehicle_detection.pt')
+model = YOLO('../../src/models/yolov8n.pt')
 
 # Open the video file
 video_path = "../../src/data/croisement.mp4"
