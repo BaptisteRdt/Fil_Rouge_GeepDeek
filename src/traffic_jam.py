@@ -2,10 +2,10 @@ import cv2
 from ultralytics import YOLO
 
 # Load the YOLOv8 model
-model = YOLO('../../src/models/best_model_Yv8_epoch41.pt')
+model = YOLO('models/best_model_Yv8_epoch41.pt')
 
 # Open the video file
-video_path = ("../../src/data/sample.mp4")
+video_path = ("../../src/data/croisement.mp4")
 
 cap = cv2.VideoCapture(video_path)
 
@@ -22,7 +22,7 @@ while cap.isOpened():
         if i % frame_rate == 0:
             # Run YOLOv8 tracking on the frame, persisting tracks between frames
             results = model.track(frame, persist=True)
-
+            print(results)
             # Visualize the results on the frame
             annotated_frame = results[0].plot()
             annotated_frame = cv2.resize(annotated_frame, None, fx=0.5, fy=0.5)
