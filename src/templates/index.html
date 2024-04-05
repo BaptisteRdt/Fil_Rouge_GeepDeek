@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Télécharger une vidéo</title>
+</head>
+<body>
+    <h1>Télécharger une vidéo pour la détection d'objets</h1>
+    <form action="/upload/" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <select name = "model">
+            <option value="Choisir un modèle">Choisir un modèle</option>
+            <option value="yolov5m.pt">yolov5m</option>
+            <option value="yolov8n.pt">yolov8n</option>
+        </select>
+        <input type="submit" value="Télécharger">
+    </form>
+</body>
+</html>
