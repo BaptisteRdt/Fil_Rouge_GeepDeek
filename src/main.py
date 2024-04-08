@@ -4,13 +4,15 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
-from ultralytics.solutions import speed_estimation
+from typing import Tuple
 import uvicorn
 import shutil
-import time
 import cv2
+import re
+import easyocr
+import time
+import csv
 import uuid
-import torch
 import threading
 import os
 os.environ['KMP_DUPLICATE_LIB_OK'] ='True'
@@ -30,8 +32,6 @@ if not os.path.exists(MODEL_FOLDER):
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
-
-
 
 # Montage des dossiers statiques pour servir les fichiers CSS, JS, etc.
 # app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -124,73 +124,138 @@ async def stop_processing(request: Request):
 
 # Fonction asynchrone pour traiter la vidéo en utilisant le modèle YOLO
 async def process_video(video_path, model_name):
+    output_csv = "results.csv"
+
     model = YOLO(model_name)
-    global results, fps, should_continue
-    should_continue = True
-    # Ouverture de la vidéo pour traitement
+    #model = 'model/' + model_name
+    # Initialize EasyOCR reader
+    reader = easyocr.Reader(['en'], gpu=False)
+
+    # Open the video file
     cap = cv2.VideoCapture(video_path)
+
+    # Get video properties
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    # Création d'une vidéo de sortie pour enregistrer les images traitées
-    output_video = cv2.VideoWriter(os.path.join(UPLOAD_PROCESSED_FOLDER, 'video_processed.mp4'),
-                                   cv2.VideoWriter_fourcc(*'avc1'), 30, (frame_width, frame_height))
-    # Points de référence pour l'estimation de la vitesse des véhicules
-    line_pts = [(0, 500), (1280, 500)]
-    # Initialisation de l'objet d'estimation de la vitesse
-    speed_obj = speed_estimation.SpeedEstimator()
-    speed_obj.set_args(reg_pts=line_pts,
-                       names=model.model.names)
-    try:
-        while cap.isOpened() and should_continue:
-            ret, frame = cap.read()
-            if not ret:
-                break
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
 
-            car_count, truck_count = 0, 0
+    # Define the codec and create VideoWriter object
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    output_video = cv2.VideoWriter(os.path.join(UPLOAD_PROCESSED_FOLDER, 'video_processed.mp4'), fourcc, fps, (frame_width // 2, frame_height // 2))
+
+    # Set the desired frame rate
+    frame_rate = 4
+
+    # Initialize variables for previous license plate
+    prev_license_plate = ""
+
+    # Set for storing detected vehicle IDs
+    detected_vehicles = set()
+
+    # Regular expression to match alphanumeric characters
+    pattern = re.compile('[a-zA-Z0-9]+')
+
+    # Open CSV file for writing
+    with open(output_csv, 'w', newline='') as csvfile:
+        fieldnames = ['Frame', 'Xmin', 'Ymin', 'Xmax', 'Ymax', 'License Plate Text', 'Confidence']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+
+        i = 0
+        try :
             start_time = time.time()
-            # Détection des véhicules dans la frame actuelle
-            result = model.track(frame, persist=True, tracker="bytetrack.yaml", conf=0.5, stream_buffer=True)
+            while cap.isOpened():
+                success, frame = cap.read()
+                if success:
+                    if i % frame_rate == 0:
+                        # Run YOLOv8 detection on the frame
+                        results = model.predict(frame, conf=0.1)
 
-            if result[0].boxes.cls is not None:
-                classes_tensor = result[0].boxes.cls
-                valeurs_uniques, occurrences = torch.unique(classes_tensor, return_counts=True)
-                class_labels = {int(cls): label for cls, label in model.names.items()}
+                        # Sort results based on confidence
+                        results.sort(key=lambda x: x[0][2] if len(x[0]) > 2 else 0, reverse=True)
 
-                for cls, occ in zip(valeurs_uniques, occurrences):
-                    if class_labels[int(cls)] == "car":
-                        car_count = int(occ)
-                    elif class_labels[int(cls)] == "truck":
-                        truck_count = int(occ)
+                        for item in results:
+                            # Extract bounding box coordinates
+                            bbox_data = item.boxes.data.cpu().numpy()[0]
+                            xmin, ymin, xmax, ymax = map(int, bbox_data[:4])
 
-            # Estimation de la vitesse des véhicules dans la frame
-            frame = speed_obj.estimate_speed(frame, result)
-            # Affichage des boîtes de détection et des informations de vitesse
-            frame_f = result[0].plot(probs=False, kpt_line=False)
-            # Écriture de la frame traitée dans la vidéo de sortie
-            output_video.write(frame_f)
+                            # Crop the license plate region
+                            plate_img = frame[ymin:ymax, xmin:xmax]
 
-            # Encodage de l'image traitée pour le streaming
-            _, buffer = cv2.imencode('.jpg', frame)
-            frame_encoded = buffer.tobytes()
-            end_time = time.time()
+                            # Apply pre-processing to the plate image
+                            plate_gray = cv2.cvtColor(plate_img, cv2.COLOR_BGR2GRAY)
+                            _, plate_thresh = cv2.threshold(plate_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-            # Calcul du temps d'inférence et du nombre d'images par seconde
-            inference_time = end_time - start_time
-            if inference_time > 0:
-                fps = 1 / inference_time
-            else:
-                fps = 0
+                            try:
+                                # Use EasyOCR to recognize the text
+                                result = reader.readtext(plate_thresh)
 
-            # Renvoi de l'image traitée dans le flux
-            yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_encoded + b'\r\n')
-            # Mise à jour des résultats de détection
-            results["car"] = car_count
-            results["truck"] = truck_count
+                                if result:
+                                    text = result[0][-2]
+                                    confidence = result[0][-1]
 
-    finally:
-        # Libération des ressources vidéo à la fin du traitement
-        output_video.release()
-        cap.release()
+                                    # Filter out spaces and special characters
+                                    filtered_text = ''.join(pattern.findall(text))
+
+                                    # Check confidence threshold and text length
+                                    if confidence > 0.3 and len(filtered_text) >= 7:
+                                        # Check if the vehicle is already detected
+                                        vehicle_id = (xmin, ymin)  # Using the top-left corner as the vehicle ID
+                                        if vehicle_id not in detected_vehicles:
+                                            detected_vehicles.add(vehicle_id)
+
+                                            # Compare with previous license plate
+                                            if filtered_text != prev_license_plate:
+                                                prev_license_plate = filtered_text
+
+                                                # Draw bounding box on the frame
+                                                cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
+
+                                                # Display recognized text and confidence on the frame
+                                                cv2.putText(frame, f"{filtered_text} ({confidence:.2f})", (xmin, ymin - 10),
+                                                            cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
+
+                                                # Write to CSV file if confidence > 0.1 and text length >= 7
+                                                writer.writerow({
+                                                    'Frame': i,
+                                                    'Xmin': xmin,
+                                                    'Ymin': ymin,
+                                                    'Xmax': xmax,
+                                                    'Ymax': ymax,
+                                                    'License Plate Text': filtered_text,
+                                                    'Confidence': confidence
+                                                })
+                            except Exception as e:
+                                print(f"An error occurred: {e}")
+
+                        # Resize the frame
+                        frame_resized = cv2.resize(frame, (frame_width // 2, frame_height // 2))
+
+                        # Write the annotated frame to the output video
+                        output_video.write(frame_resized)
+
+                # Encodage de l'image traitée pour le streaming
+                _, buffer = cv2.imencode('.jpg', frame)
+                frame_encoded = buffer.tobytes()
+                end_time = time.time()
+
+                # Calcul du temps d'inférence et du nombre d'images par seconde
+                inference_time = end_time - start_time
+                if inference_time > 0:
+                    fps = 1 / inference_time
+                else:
+                    fps = 0
+
+                # Renvoi de l'image traitée dans le flux
+                yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_encoded + b'\r\n')
+                # Mise à jour des résultats de détection
+                #results["car"] = car_count
+                #results["truck"] = truck_count
+
+        finally:
+            # Libération des ressources vidéo à la fin du traitement
+            output_video.release()
+            cap.release()
 
 
 # Lancement de l'application FastAPI
