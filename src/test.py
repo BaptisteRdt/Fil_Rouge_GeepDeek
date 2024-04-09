@@ -1,5 +1,6 @@
 import cv2
 from ultralytics import YOLO
+from traffic_jam import traffic_jam
 
 # Load the YOLOv8 model
 model = YOLO('models/best_model_Yv8_epoch41.pt')
@@ -22,7 +23,10 @@ while cap.isOpened():
         if i % frame_rate == 0:
             # Run YOLOv8 tracking on the frame, persisting tracks between frames
             results = model.track(frame, persist=True)
-            print(results)
+            traffic_jam_bool = traffic_jam(results, 0.05)
+            print(f'Is there any traffic jam on this frame? {traffic_jam_bool}')
+
+
             # Visualize the results on the frame
             annotated_frame = results[0].plot()
             annotated_frame = cv2.resize(annotated_frame, None, fx=0.5, fy=0.5)
