@@ -27,13 +27,13 @@ while cap.isOpened():
             results = model.track(frame, persist=True)
 
             vehicles = get_vehicles_dict(results, vehicles)
-            traffic_jam_bool = traffic_jam(vehicles, 0.05)
+            traffic_jam_bool = traffic_jam(vehicles)
 
             # Visualize the results on the frame
             annotated_frame = results[0].plot()
             annotated_frame = cv2.resize(annotated_frame, None, fx=0.5, fy=0.5)
             annotated_frame = cv2.putText(img=annotated_frame, org=(50, 50),
-                                          color=(255, 0, 0) if traffic_jam_bool else (0, 255, 0), thickness=2,
+                                          color=(0, 0, 255) if traffic_jam_bool else (0, 255, 0), thickness=2,
                                           text="Traffic jam !!!" if traffic_jam_bool else "Fluid traffic",
                                           fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1)
 
