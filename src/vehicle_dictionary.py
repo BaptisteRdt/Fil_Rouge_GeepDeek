@@ -14,10 +14,10 @@ def get_vehicles_dict(frame, old_vehicles_dict: dict = None) -> dict:
                                   'is_track': bbox.is_track, 'id': int(bbox.id), 'is_moving': False,
                                   'direction': {'Top': 0, 'Bottom': 0, 'Left': 0, 'Right': 0}}
         if old_vehicles_dict is not None and int(bbox.id) in old_vehicles_dict:
-            vehicles[int(bbox.id)]['direction'] = direction_between_vehicles(old_vehicles_dict[int(bbox.id)],
-                                                                             vehicles[int(bbox.id)])
+            direction = direction_between_vehicles(old_vehicles_dict[int(bbox.id)], vehicles[int(bbox.id)])
+            vehicles[int(bbox.id)]['direction'] = direction
             vehicles[int(bbox.id)]['length'] = get_car_length(vehicles[int(bbox.id)])
-            vehicles[int(bbox.id)]['is_moving'] = True
+            vehicles[int(bbox.id)]['is_moving'] = (direction != {'Top': 0, 'Bottom': 0, 'Left': 0, 'Right': 0})
 
     vehicles = get_closest_vehicles(vehicles)
     return vehicles
