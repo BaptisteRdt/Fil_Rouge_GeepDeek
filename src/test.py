@@ -7,7 +7,7 @@ from vehicle_dictionary import get_vehicles_dict
 model = YOLO('models/best_model_Yv8_epoch41.pt')
 
 # Open the video file
-video_path = ("data/croisement.mp4")
+video_path = ("data/sample.mp4")
 
 cap = cv2.VideoCapture(video_path)
 
