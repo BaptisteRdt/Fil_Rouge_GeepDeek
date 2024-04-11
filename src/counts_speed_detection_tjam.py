@@ -48,7 +48,8 @@ async def model_final(video_path, model_name):
     start_time = time.time()
     # try :
 
-    while cap.cap.isOpened():
+    # while cap.cap.isOpened():
+    while True:
         # Read a frame from the video
         success, frame = cap.cap.read()
 
