@@ -248,9 +248,6 @@ async def process_video(video_path, model_name):
 
                 # Renvoi de l'image traitée dans le flux
                 yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_encoded + b'\r\n')
-                # Mise à jour des résultats de détection
-                #results["car"] = car_count
-                #results["truck"] = truck_count
 
         finally:
             # Libération des ressources vidéo à la fin du traitement
