@@ -10,6 +10,8 @@ import uuid
 import threading
 import os
 from detection_plaque import detection_plaque
+from counts_speed_detection_tjam import model_final
+# from counts_speed_detection_tjam import 
 
 
 
@@ -87,8 +89,17 @@ async def process_video_endpoint(unique_id: str):
     filename = file_mappings.get(unique_id)
     if not filename:
         raise HTTPException(status_code=404, detail="File not found")
+    
     # Appel à la fonction de traitement de la vidéo et renvoi d'un flux d'images traitées
-    return StreamingResponse(detection_plaque(filename['path'], filename['model']),
+
+    detect_plaque = StreamingResponse(detection_plaque(filename['path'], filename['model']),
+                             media_type='multipart/x-mixed-replace; boundary=frame')
+    
+    # detect_plaque_2 = StreamingResponse(detection_plaque(filename['path'], filename['model']),
+    #                          media_type='multipart/x-mixed-replace; boundary=frame')
+    
+    # return detect_plaque
+    return StreamingResponse(model_final(filename['path'], filename['model']),
                              media_type='multipart/x-mixed-replace; boundary=frame')
 
 
