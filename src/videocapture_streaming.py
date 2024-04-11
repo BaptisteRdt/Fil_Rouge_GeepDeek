@@ -1,5 +1,3 @@
-import cv2
-
 import cv2, queue, threading, time
 import time
 
@@ -34,15 +32,15 @@ class VideoCapture:
   def read(self):
     return self.q.get()
 
-path = 'uav0000013_00000_v/%7d.jpg'
-cap = VideoCapture(path)
+# path = 'uav0000013_00000_v/%7d.jpg'
+# cap = VideoCapture(path)
 
 
-while True:
-  frame = cap.read()
+# while True:
+#   frame = cap.read()
 
-  # do your model computation
+#   # do your model computation
 
-  cv2.imshow("frame", frame)
-  if chr(cv2.waitKey(1)&255) == 'q':
-    break
+#   cv2.imshow("frame", frame)
+#   if chr(cv2.waitKey(1)&255) == 'q':
+#     break

@@ -12,7 +12,8 @@ from videocapture_streaming import VideoCapture
 # names = model_vehicles.model.names
 
 async def model_final(video_path, model_name):
-    names = model_name.model.names
+    model_vehicles = YOLO(model_name)
+    names = model_vehicles.model.names
     # Open the video file
     # video_path = "data/sample.mp4"
 
@@ -45,9 +46,11 @@ async def model_final(video_path, model_name):
 
     # Loop through the video frames
     start_time = time.time()
+    # try :
+
     while cap.cap.isOpened():
         # Read a frame from the video
-        success, frame = cap.read()
+        success, frame = cap.cap.read()
 
         if success:
             # Run YOLOv8 tracking on the frame, persisting tracks between frames
@@ -62,9 +65,9 @@ async def model_final(video_path, model_name):
             annotated_frame = counter_object.start_counting(annotated_frame, vehicles_results)
             annotated_frame = cv2.resize(annotated_frame, None, fx=0.5, fy=0.5)
             annotated_frame = cv2.putText(img=annotated_frame, org=(50, 50),
-                                        color=(0, 0, 255) if traffic_jam_bool else (0, 255, 0), thickness=2,
-                                        text="Traffic jam !!!" if traffic_jam_bool else "Fluid traffic",
-                                        fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1)
+                                          color=(0, 0, 255) if traffic_jam_bool else (0, 255, 0), thickness=2,
+                                          text="Traffic jam !!!" if traffic_jam_bool else "Fluid traffic",
+                                          fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1)
 
             out.write(annotated_frame)
 
@@ -83,14 +86,15 @@ async def model_final(video_path, model_name):
             inference_time = end_time - start_time
             if inference_time > 0:
                 fps = 1 / inference_time
-            else:
-                fps = 0
+        else:
+            fps = 0
 
-            # Renvoi de l'image traitée dans le flux
-            yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_encoded + b'\r\n')
+        # Renvoi de l'image traitée dans le flux
+        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_encoded + b'\r\n')
 
-            out.release()
-            cap.release()
+    # finally:
+    out.release()
+    cap.cap.release()
 
 
     # # Release the video capture object and close the display window

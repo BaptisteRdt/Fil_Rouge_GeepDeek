@@ -92,8 +92,8 @@ async def process_video_endpoint(unique_id: str):
     
     # Appel à la fonction de traitement de la vidéo et renvoi d'un flux d'images traitées
 
-    detect_plaque = StreamingResponse(detection_plaque(filename['path'], filename['model']),
-                             media_type='multipart/x-mixed-replace; boundary=frame')
+    # detect_plaque = StreamingResponse(detection_plaque(filename['path'], filename['model']),
+    #                          media_type='multipart/x-mixed-replace; boundary=frame')
     
     # detect_plaque_2 = StreamingResponse(detection_plaque(filename['path'], filename['model']),
     #                          media_type='multipart/x-mixed-replace; boundary=frame')
