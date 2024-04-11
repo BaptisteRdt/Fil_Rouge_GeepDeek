@@ -56,6 +56,13 @@ should_continue = True
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+videopath_1 = "uploads_processed/sample.mp4"
+videopath_2 = "uploads_processed/sample.mp4"
+# Page rendus vidéos après avoir fait les modèles si on arrive pas à les render frame par frame
+@app.get("/back_up_video", response_class=HTMLResponse)
+def video_render(request: Request):
+    return templates.TemplateResponse("back_up_video.html", {"request": request, "videopath_1" : videopath_1, "videopath_2": videopath_2})
+
 
 # Route pour téléverser une vidéo et spécifier le modèle à utiliser
 @app.post("/upload/")

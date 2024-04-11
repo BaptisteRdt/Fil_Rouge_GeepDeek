@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Page avec deux vidéos</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="mt-4" style="text-align: center; margin: 20px; color: #333">
+        Deux vidéos
+      </h1>
+      <div class="row">
+        <div class="col-md-6">
+          <h2
+            style="
+              text-align: center;
+              margin: 20px;
+              color: #333;
+              font-size: 24px;
+              font-weight: bold;
+            "
+          >
+            Détection de plaque
+          </h2>
+          <video width="100%" height="auto" controls autoplay muted>
+            <source src="{{ videopath_1 }}" />
+            Your browser does not support the video tag.
+          </video>
+          <p>
+            Détecte et enregistre dans un csv les plaques d'immatriculations
+          </p>
+        </div>
+        <div class="col-md-6">
+          <h2
+            style="
+              text-align: center;
+              margin: 20px;
+              color: #333;
+              font-size: 24px;
+              font-weight: bold;
+            "
+          >
+            Compte, Vitesse, Embouteillage
+          </h2>
+          <video width="100%" height="auto" controls autoplay muted>
+            <source src="{{ videopath_2 }}" />
+            Your browser does not support the video tag.
+          </video>
+          <p>
+            Compte le nombre de véhicule, aestime la vitesse, et la présence
+            d'embouteillage
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
