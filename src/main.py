@@ -88,7 +88,7 @@ async def process_video_endpoint(unique_id: str):
     if not filename:
         raise HTTPException(status_code=404, detail="File not found")
     # Appel à la fonction de traitement de la vidéo et renvoi d'un flux d'images traitées
-    return StreamingResponse(process_video(filename['path'], filename['model']),
+    return StreamingResponse(detection_plaque(filename['path'], filename['model']),
                              media_type='multipart/x-mixed-replace; boundary=frame')
 
 
