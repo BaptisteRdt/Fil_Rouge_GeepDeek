@@ -58,6 +58,7 @@ def direction_between_vehicles(vehicle_1, vehicle_2) -> dict:
 
     if abs(diff_x) < 10 and abs(diff_y) < 10:
         return direction
+    
     if diff_y > diff_x:
         if diff_y < 0.0:
             direction['Top'] = 1
